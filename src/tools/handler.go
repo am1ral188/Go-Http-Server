@@ -24,13 +24,18 @@ func Handle(path string, cont Controller, act string, method string) {
 		if reqPath[len(reqPath)-1] != '/' {
 			reqPath += "/"
 		}
-		if len(strings.Split(reqPath, "/"))-len(strings.Split(p, "/")) != 0 || method != r.Method {
+		if len(strings.Split(reqPath, "/"))-len(strings.Split(p, "/")) != 0 {
 			notFound(w)
+			return
+		}
+		if method != r.Method {
+			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 		cont.Set(w, r)
 		reflect.ValueOf(cont).MethodByName(act).Call(nil)
 	}
+
 	Mux.HandleFunc(p, f)
 }
 
