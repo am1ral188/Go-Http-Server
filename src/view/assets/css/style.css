@@ -1,0 +1,22 @@
+:root {
+    --bgcolor: rgb(2, 0, 36);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    background: var(--bgcolor);
+    color: white;
+}
+h1{
+    font-weight: bold;
+    font-size: 3.5em;
+}
