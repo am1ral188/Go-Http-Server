@@ -1,53 +1,98 @@
 package tools
 
 import (
-	"log"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
 type Controller interface {
-	Index()
 	Set(http.ResponseWriter, *http.Request)
 }
 
 var Mux = http.NewServeMux()
 
-func Handle(path string, cont Controller, act string, method string) {
+type middleWare struct {
+	RW         http.ResponseWriter
+	Req        *http.Request
+	Cont       Controller
+	Action     string
+	MiddleWare func(http.ResponseWriter, *http.Request, func(http.ResponseWriter, *http.Request))
+}
+
+func (m *middleWare) Set(w http.ResponseWriter, r *http.Request) {
+	m.RW = w
+	m.Req = r
+}
+func (m *middleWare) Index(args ...interface{}) {
+	f := func(w http.ResponseWriter, r *http.Request) {
+		m.Cont.Set(w, r)
+		params := []reflect.Value{}
+		if len(args) == 0 {
+			params = nil
+		}
+		for _, arg := range args {
+			params = append(params, reflect.ValueOf(arg))
+		}
+		reflect.ValueOf(m.Cont).MethodByName(m.Action).Call(params)
+	}
+	m.MiddleWare(m.RW, m.Req, f)
+}
+
+func Handle(path string, cont Controller, act string, method string, w http.ResponseWriter, r *http.Request) bool {
+	if r.Method != method {
+		return false
+	}
 	p := path
 	if p[len(p)-1] != '/' {
 		p += "/"
 	}
-	f := func(w http.ResponseWriter, r *http.Request) {
-		reqPath := r.URL.Path
-		if reqPath[len(reqPath)-1] != '/' {
-			reqPath += "/"
-		}
-		if len(strings.Split(reqPath, "/"))-len(strings.Split(p, "/")) != 0 {
-			notFound(w)
-			return
-		}
-		if method != r.Method {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		cont.Set(w, r)
-		reflect.ValueOf(cont).MethodByName(act).Call(nil)
+	reqP := r.URL.Path
+	if reqP[len(reqP)-1] != '/' {
+		reqP += "/"
 	}
-
-	Mux.HandleFunc(p, f)
+	pSplit := strings.Split(p, "/")
+	reqPathSplit := strings.Split(reqP, "/")
+	if len(reqPathSplit)-len(pSplit) != 0 {
+		return false
+	}
+	var args []string
+	finalP := pSplit
+	for i, s := range pSplit {
+		if len(s) < 3 {
+			continue
+		}
+		if s[0] == '{' && s[len(s)-1] == '}' {
+			nameAndRegex := strings.Split(s[1:len(s)-1], ":")
+			matchString, err := regexp.MatchString(nameAndRegex[1], reqPathSplit[i])
+			if err != nil {
+				return false
+			}
+			if matchString {
+				finalP[i] = reqPathSplit[i]
+				args = append(args, reqPathSplit[i])
+			} else {
+				return false
+			}
+		}
+	}
+	if strings.Join(reqPathSplit, "/") == strings.Join(finalP, "/") {
+		cont.Set(w, r)
+		if len(args) == 0 {
+			reflect.ValueOf(cont).MethodByName(act).Call(nil)
+		} else {
+			params := []reflect.Value{}
+			for _, arg := range args {
+				params = append(params, reflect.ValueOf(arg))
+			}
+			reflect.ValueOf(cont).MethodByName(act).Call(params)
+		}
+		return true
+	}
+	return false
 }
 
-func notFound(w http.ResponseWriter) {
-	view, err := View("notFound")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	err2 := view.Show(w)
-	if err2 != nil {
-		log.Fatal(err2)
-		return
-	}
+func HandleWithMiddleWare(path string, cont Controller, act string, method string, w http.ResponseWriter, r *http.Request, m func(http.ResponseWriter, *http.Request, func(http.ResponseWriter, *http.Request))) bool {
+	return Handle(path, &middleWare{MiddleWare: m, Cont: cont, Action: act}, "Index", method, w, r)
 }

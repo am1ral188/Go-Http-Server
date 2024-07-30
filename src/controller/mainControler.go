@@ -3,7 +3,7 @@ package Controller
 import (
 	"awesomeProject/src/tools"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 )
 
@@ -12,24 +12,16 @@ type MainController struct {
 	Request  *http.Request
 }
 
-func (r MainController) Index() {
-	if r.Request.URL.String() != "/" {
-		view, err := tools.View("notfound")
-		if err != nil {
-			log.Fatal(err)
-		}
-		err2 := view.Show(r.Response)
-		if err2 != nil {
-			log.Fatal(err2)
-		}
-	} else {
-		view, err := tools.View("index")
-		if err != nil {
-			fmt.Println(err)
-		}
-		view.Show(r.Response)
+func (r MainController) Index(args ...interface{}) {
+	view, err := tools.View("index")
+	if err != nil {
+		fmt.Println(err)
 	}
+	view.Show(r.Response)
 
+}
+func (r MainController) ID(id string) {
+	io.WriteString(r.Response, id)
 }
 
 func (r *MainController) Set(w http.ResponseWriter, req *http.Request) {

@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	//fixme :add sub path handler
+	//fixme : replace all fmt print with log.New
 	mux := tools.Mux
 
 	server := &http.Server{Addr: cfg.ListenOn, Handler: mux}
