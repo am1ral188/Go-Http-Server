@@ -16,6 +16,7 @@ html, body {
 }
 
 body {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -54,7 +55,27 @@ body {
 
 .stack span:nth-child(odd) { --glitch-translate: 8px; }
 .stack span:nth-child(even) { --glitch-translate: -8px; }
-
+.sign{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+.sign-link{
+    color: honeydew;
+    text-decoration: none;
+}
+.sign-link svg{
+    scale: 0.6;
+    fill: #fff;
+    transition: 0.5s;
+}
+.sign-link svg:hover{
+    fill: #a5a5a5;
+}
+.stack:hover{
+    transition: color 0.5s;
+    color: #191936;
+}
 @keyframes stack {
     0% {
         opacity: 0;
