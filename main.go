@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	//fixme :add sub path handler
 	mux := tools.Mux
 
 	server := &http.Server{Addr: cfg.ListenOn, Handler: mux}

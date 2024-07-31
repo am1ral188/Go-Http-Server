@@ -10,12 +10,12 @@ func RouterInit() {
 	r := Tools.Router{}
 	r.Group("/api", func(router *Tools.Router) {
 		c := Controller.NewApiController()
-		router.GET("/card-verify", c, "CardVerify")
-		router.GET("/new-card", c, "CardInsert")
-		router.GET("", c, "Index")
+		router.GET("/card-verify", c, "CardVerify", false)
+		router.GET("/new-card", c, "CardInsert", false)
+		router.GET("", c, "Index", false)
 	})
-	r.GET("/", Controller.NewMainController(), "Index")
-	r.GET(`/{id:^[0-9]+$}`, Controller.NewMainController(), "ID")
+	r.GET("/", Controller.NewMainController(), "Index", false)
+	r.GET(`/{id:^[0-9]+$}`, Controller.NewMainController(), "ID", true)
 	r.UseMiddleWare(middleWares.ExampleMiddleWare)
 	r.Init()
 }

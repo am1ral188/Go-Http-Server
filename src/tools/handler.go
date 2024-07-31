@@ -40,7 +40,7 @@ func (m *middleWare) Index(args ...interface{}) {
 	m.MiddleWare(m.RW, m.Req, f)
 }
 
-func Handle(path string, cont Controller, act string, method string, w http.ResponseWriter, r *http.Request) bool {
+func Handle(path string, cont Controller, act string, method string, w http.ResponseWriter, r *http.Request, handleSubPath bool) bool {
 	if r.Method != method {
 		return false
 	}
@@ -54,7 +54,10 @@ func Handle(path string, cont Controller, act string, method string, w http.Resp
 	}
 	pSplit := strings.Split(p, "/")
 	reqPathSplit := strings.Split(reqP, "/")
-	if len(reqPathSplit)-len(pSplit) != 0 {
+	if len(reqPathSplit)-len(pSplit) < 0 {
+		return false
+	}
+	if !handleSubPath && len(reqPathSplit)-len(pSplit) != 0 {
 		return false
 	}
 	var args []string
@@ -77,7 +80,7 @@ func Handle(path string, cont Controller, act string, method string, w http.Resp
 			}
 		}
 	}
-	if strings.Join(reqPathSplit, "/") == strings.Join(finalP, "/") {
+	if strings.Join(reqPathSplit, "/") == strings.Join(finalP, "/") || (handleSubPath && strings.Contains(strings.Join(reqPathSplit, "/"), strings.Join(finalP, "/"))) {
 		cont.Set(w, r)
 		if len(args) == 0 {
 			reflect.ValueOf(cont).MethodByName(act).Call(nil)
@@ -93,6 +96,6 @@ func Handle(path string, cont Controller, act string, method string, w http.Resp
 	return false
 }
 
-func HandleWithMiddleWare(path string, cont Controller, act string, method string, w http.ResponseWriter, r *http.Request, m func(http.ResponseWriter, *http.Request, func(http.ResponseWriter, *http.Request))) bool {
-	return Handle(path, &middleWare{MiddleWare: m, Cont: cont, Action: act}, "Index", method, w, r)
+func HandleWithMiddleWare(path string, cont Controller, act string, method string, w http.ResponseWriter, r *http.Request, m func(http.ResponseWriter, *http.Request, func(http.ResponseWriter, *http.Request)), subPathHandle bool) bool {
+	return Handle(path, &middleWare{MiddleWare: m, Cont: cont, Action: act}, "Index", method, w, r, subPathHandle)
 }

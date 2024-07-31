@@ -6,9 +6,10 @@ import (
 )
 
 type pro struct {
-	Method     string
-	Controller Controller
-	Act        string
+	Method        string
+	Controller    Controller
+	Act           string
+	HandleSubPath bool
 }
 type action map[string]pro
 type callBack func(*Router)
@@ -34,22 +35,22 @@ func (r *Router) UseMiddleWare(f func(http.ResponseWriter, *http.Request, func(h
 	r.middleWare = f
 	r.hasMiddleWare = true
 }
-func (r *Router) GET(path string, cont Controller, act string) {
-	r.Actions[path] = pro{"GET", cont, act}
+func (r *Router) GET(path string, cont Controller, act string, handleSubPath bool) {
+	r.Actions[path] = pro{"GET", cont, act, handleSubPath}
 }
-func (r *Router) POST(path string, cont Controller, act string) {
-	r.Actions[path] = pro{"POST", cont, act}
+func (r *Router) POST(path string, cont Controller, act string, handleSubPath bool) {
+	r.Actions[path] = pro{"POST", cont, act, handleSubPath}
 }
 func (r *Router) init(obj *Router, parentPath string, writer http.ResponseWriter, request *http.Request, hasM bool) bool {
 	notFount := true
 	for s, f := range obj.Actions {
 		if hasM {
-			if HandleWithMiddleWare(parentPath+s, f.Controller, f.Act, f.Method, writer, request, r.middleWare) {
+			if HandleWithMiddleWare(parentPath+s, f.Controller, f.Act, f.Method, writer, request, r.middleWare, f.HandleSubPath) {
 				notFount = false
 				return notFount
 			}
 		} else {
-			if Handle(parentPath+s, f.Controller, f.Act, f.Method, writer, request) {
+			if Handle(parentPath+s, f.Controller, f.Act, f.Method, writer, request, f.HandleSubPath) {
 				notFount = false
 				return notFount
 			}
